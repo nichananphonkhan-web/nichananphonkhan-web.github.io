@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindFood - อาหารบำบัดใจ (พร้อมเพลงพื้นหลัง)</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #020617;
+            color: #f1f5f9;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        /* Animation สำหรับปุ่มเพลง */
+        .music-wave {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        .music-bar {
+            width: 2px;
+            height: 12px;
+            background: #6366f1;
+            animation: bounce 1s ease-in-out infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { height: 4px; }
+            50% { height: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const AppStatus = { IDLE: 'idle', LOADING: 'loading', SUCCESS: 'success', ERROR: 'error' };
+
+        const ALL_MOCK_FOODS = [
+            { id: 1, name: "แกงจืดตำลึงหมูสับ", nameEn: "Ivy Gourd Soup", description: "เมนูอุ่นสบายท้อง...", nutrients: ["วิตามินเอ", "แคลเซียม"], moodBenefit: "ช่วยลดความตึงเครียด", imageUrl: "https://sys.sheepola.co.th/static/images/article/1609994967.jpg" },
+            { id: 2, name: "ปลาแซลมอนย่างซีอิ๊ว", nameEn: "Grilled Salmon", description: "อุดมไปด้วย Omega-3...", nutrients: ["Omega-3", "วิตามิน D"], moodBenefit: "เสริมสร้างการทำงานของสมอง", imageUrl: "https://f.ptcdn.info/529/002/000/1361711865-6009594835-o.jpg" },
+            { id: 3, name: "ยำถั่วพูไข่ต้ม", nameEn: "Winged Bean Salad", description: "ถั่วพูมีกากใยสูง...", nutrients: ["ไฟเบอร์", "เหล็ก"], moodBenefit: "เพิ่มความสดชื่น", imageUrl: "https://img.wongnai.com/p/1920x0/2018/11/20/07377fc2b3dc4a61b92f35b892dbb41b.jpg" },
+            { id: 4, name: "ต้มยำกุ้งน้ำใส", nameEn: "Tom Yum Goong", description: "ซุปร้อนๆ รสจัดจ้าน...", nutrients: ["โปรตีน", "วิตามินซี"], moodBenefit: "กระตุ้นการหลั่งเอนดอร์ฟิน", imageUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNM5KtiDcCYdoubo2eb_1EV2Qy10gD5m-WRQ&s" },
+            { id: 5, name: "ไก่ผัดขิง", nameEn: "Stir-fried Chicken with Ginger", description: "เมนูย่อยง่าย ขิงขับลม...", nutrients: ["โปรตีน", "จิงเจอรอล"], moodBenefit: "กลิ่นหอมของขิงช่วยผ่อนคลาย", imageUrl: "https://recipe.sgethai.com/wp-content/uploads/2025/05/cover-chicken-stir-fry-with-ginger_result.webp" },
+            { id: 6, name: "ปลากะพงนึ่งมะนาว", nameEn: "Steamed Sea Bass", description: "ไขมันดี ปรุงรสจี๊ดจ๊าด...", nutrients: ["Omega-3", "โปรตีน"], moodBenefit: "รสเปรี้ยวช่วยปลุกความสดชื่น", imageUrl: "https://assets.unileversolutions.com/recipes-v2/117540.jpg" }
+        ];
+
+        const mockGenerateService = () => {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    const shuffled = [...ALL_MOCK_FOODS].sort(() => 0.5 - Math.random());
+                    resolve(shuffled.slice(0, 6));
+                }, 1000);
+            });
+        };
+
+        const App = () => {
+            const [foods, setFoods] = useState([]);
+            const [status, setStatus] = useState(AppStatus.IDLE);
+            const [isMuted, setIsMuted] = useState(false);
+            const audioRef = useRef(null);
+
+            // --- ส่วนจัดการเพลง ---
+            useEffect(() => {
+                // อย่าลืมเปลี่ยนชื่อไฟล์เพลงตรงนี้ให้ถูกต้อง
+                audioRef.current = new Audio("bg.mp3"); 
+                audioRef.current.loop = true;
+                audioRef.current.volume = 0.4;
+
+                const playAudio = () => {
+                    audioRef.current.play().catch(err => console.log("Autoplay blocked, waiting for interaction"));
+                    window.removeEventListener('click', playAudio);
+                };
+
+                window.addEventListener('click', playAudio);
+
+                return () => {
+                    audioRef.current.pause();
+                    window.removeEventListener('click', playAudio);
+                };
+            }, []);
+
+            const toggleMute = () => {
+                if (audioRef.current) {
+                    audioRef.current.muted = !audioRef.current.muted;
+                    setIsMuted(!isMuted);
+                }
+            };
+
+            const loadContent = async () => {
+                setStatus(AppStatus.LOADING);
+                try {
+                    const advice = await mockGenerateService();
+                    setFoods(advice);
+                    setStatus(AppStatus.SUCCESS);
+                } catch (err) { setStatus(AppStatus.ERROR); }
+            };
+
+            useEffect(() => { loadContent(); }, []);
+
+            return (
+                <div className="min-h-screen bg-[#020617] text-slate-200">
+                    {/* Navbar */}
+                    <nav className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+                        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+                            
+                            {/* [แก้ไข 1] ทำให้ส่วนโลโก้กดกลับหน้าหลักได้ */}
+                            <a href="index.html" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                                <div className="bg-gradient-to-tr from-indigo-600 to-purple-600 w-9 h-9 rounded-lg flex items-center justify-center text-xl">🥗</div>
+                                <h1 className="text-xl font-bold text-white">MindFood</h1>
+                            </a>
+                            
+                            <div className="flex items-center gap-4">
+                                
+                                {/* [แก้ไข 2] เพิ่มปุ่มหน้าหลัก (Home Button) ในแถบเมนู */}
+                                <a href="index.html" className="hidden md:flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-medium mr-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                    หน้าหลัก
+                                </a>
+
+                                {/* ปุ่มควบคุมเพลง */}
+                                <button 
+                                    onClick={toggleMute}
+                                    className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-full text-xs font-medium transition-all border border-slate-700"
+                                >
+                                    {!isMuted ? (
+                                        <div className="music-wave">
+                                            <div className="music-bar" style={{animationDelay: '0.1s'}}></div>
+                                            <div className="music-bar" style={{animationDelay: '0.3s'}}></div>
+                                            <div className="music-bar" style={{animationDelay: '0.2s'}}></div>
+                                        </div>
+                                    ) : <span>🔇</span>}
+                                    {isMuted ? "เปิดเสียง" : "ปิดเสียง"}
+                                </button>
+
+                                <button onClick={loadContent} className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-500/20">
+                                    🔄 สุ่มเมนูใหม่
+                                </button>
+                            </div>
+                        </div>
+                    </nav>
+
+                    {/* Hero Section */}
+                    <header className="py-20 px-4 max-w-4xl mx-auto text-center relative overflow-hidden">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[100px] -z-10 animate-pulse"></div>
+                        <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-6 leading-tight">
+                            เปลี่ยนมื้ออาหารให้เป็น <br/>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">พลังบวก</span>
+                        </h2>
+                        <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+                            เสียงเพลงคลอเบาๆ ช่วยให้การเลือกเมนูอาหารเพื่อสุขภาพจิตของคุณผ่อนคลายยิ่งขึ้น
+                        </p>
+                    </header>
+
+                    {/* Main Content */}
+                    <main className="max-w-6xl mx-auto px-4 pb-24">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {foods.map((food) => (
+                                <div key={food.id} className="glass-card rounded-2xl overflow-hidden hover:transform hover:scale-[1.02] transition-all flex flex-col h-full shadow-xl">
+                                    <div className="h-56 overflow-hidden relative group">
+                                        <img src={food.imageUrl} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
+                                        <div className="absolute bottom-4 left-4 right-4">
+                                             <h3 className="text-xl font-bold text-white mb-1 drop-shadow-md">{food.name}</h3>
+                                        </div>
+                                    </div>
+                                    <div className="p-5 flex flex-col flex-grow">
+                                        <p className="text-slate-300 text-sm mb-4 leading-relaxed">{food.description}</p>
+                                        <div className="bg-indigo-950/40 p-3 rounded-xl border border-indigo-500/20 mt-auto">
+                                            <p className="text-xs text-indigo-200"><strong>Good for Mood:</strong> {food.moodBenefit}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </main>
+
+                    <footer className="border-t border-slate-800 bg-slate-950 py-8 text-center">
+                        <div className="mb-4">
+                            <a href="index.html" className="text-slate-500 hover:text-indigo-400 text-sm transition-colors">กลับสู่หน้าหลัก</a>
+                        </div>
+                        <p className="text-slate-600 text-sm">© 2024 MindFood - ทานให้อร่อย ฟังเพลงให้สบายใจ</p>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

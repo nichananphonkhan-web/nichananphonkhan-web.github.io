@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindfulDark - พื้นที่ปลอดภัยเพื่อสุขภาพใจที่ดีขึ้น</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        body {
+            font-family: 'Anuphan', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            border-color: rgba(99, 102, 241, 0.5);
+            transform: translateY(-4px);
+            background: rgba(30, 41, 59, 0.8);
+        }
+        /* Animation for music playing */
+        .sound-wave {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            height: 16px;
+        }
+        .bar {
+            width: 2px;
+            background-color: #818cf8;
+            animation: wave 1s ease-in-out infinite;
+        }
+        .bar:nth-child(1) { animation-delay: 0.0s; height: 6px; }
+        .bar:nth-child(2) { animation-delay: 0.2s; height: 10px; }
+        .bar:nth-child(3) { animation-delay: 0.4s; height: 8px; }
+        .bar:nth-child(4) { animation-delay: 0.1s; height: 12px; }
+        @keyframes wave {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(2); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // --- ข้อมูลบทความจริง ---
+        const ARTICLES = [
+            {
+                id: 1,
+                category: "ผ่อนคลายด่วน",
+                title: "เทคนิคหายใจแบบ 4-7-8 ลดเครียดใน 60 วินาที",
+                description: "เมื่อร่างกายเข้าสู่ภาวะสู้หรือหนี (Fight-or-Flight) การหายใจแบบกำหนดจังหวะจะช่วยรีเซ็ตระบบประสาทอัตโนมัติ",
+                content: `
+                    <h4 class="font-bold text-indigo-300 mb-2">ขั้นตอนการปฏิบัติ:</h4>
+                    <ol class="list-decimal ml-5 space-y-2">
+                        <li>หายใจเข้าทางจมูกอย่างเงียบๆ นับ <b>1-4</b></li>
+                        <li>กลั้นหายใจค้างไว้ นับ <b>1-7</b></li>
+                        <li>ผ่อนลมหายใจออกทางปากให้เกิดเสียง 'ฟู่ว' ยาวๆ นับ <b>1-8</b></li>
+                    </ol>
+                    <p class="mt-4 text-slate-400">วิธีนี้จะช่วยเพิ่มออกซิเจนในเลือดและส่งสัญญาณให้สมองส่วน Amygdala รับรู้ว่าคุณอยู่ในสภาวะที่ปลอดภัย</p>
+                `,
+                tag: "Breathing"
+            },
+            {
+                id: 2,
+                category: "สุขภาพจิต",
+                title: "วิธีสังเกตอาการ Burnout vs เหนื่อยล้าปกติ",
+                description: "ภาวะหมดไฟไม่ใช่แค่การเหนื่อย แต่มันคือการสูญเสียความหมายในการทำงานและชีวิต",
+                content: `
+                    <h4 class="font-bold text-indigo-300 mb-2">3 สัญญาณเตือนของ Burnout:</h4>
+                    <ul class="list-disc ml-5 space-y-2">
+                        <li><b>Emotional Exhaustion:</b> รู้สึกหมดแรงทางอารมณ์ ตื่นมาแล้วไม่อยากไปทำงาน</li>
+                        <li><b>Cynicism:</b> เริ่มมีทัศนคติลบต่อเพื่อนร่วมงาน หรือมองว่างานที่ทำไม่มีประโยชน์</li>
+                        <li><b>Reduced Efficacy:</b> รู้สึกว่าตัวเองไร้ความสามารถ ทำงานผิดพลาดบ่อยขึ้น</li>
+                    </ul>
+                    <p class="mt-4 text-indigo-400 font-semibold italic">"การพักผ่อนไม่ได้หมายถึงการนอนเท่านั้น แต่หมายถึงการพาตัวเองออกจากสิ่งที่ดูดพลังงาน"</p>
+                `,
+                tag: "MentalHealth"
+            },
+            {
+                id: 3,
+                category: "การนอน",
+                title: "Sleep Hygiene: 5 กฎเหล็กเพื่อการนอนที่มีคุณภาพ",
+                description: "ทำไมการนอน 8 ชั่วโมงอาจไม่พอ ถ้าคุณภาพการนอนของคุณไม่ดี",
+                content: `
+                    <div class="space-y-3">
+                        <p>1. <b>งดแสงสีฟ้า:</b> ปิดหน้าจอทุกชนิดอย่างน้อย 30-60 นาทีก่อนนอน</p>
+                        <p>2. <b>ควบคุมอุณหภูมิ:</b> ห้องนอนที่เย็นสบาย (ประมาณ 23-25 องศา) ช่วยให้หลับลึกขึ้น</p>
+                        <p>3. <b>งดคาเฟอีนหลังบ่ายสอง:</b> คาเฟอีนตกค้างในร่างกายได้นานถึง 6-8 ชั่วโมง</p>
+                        <p>4. <b>ทำเตียงให้เป็นที่สำหรับนอน:</b> อย่าทำงานหรือกินข้าวบนเตียง สมองต้องจดจำว่าเตียง = การพักผ่อน</p>
+                    </div>
+                `,
+                tag: "Sleep"
+            },
+            {
+                id: 4,
+                category: "จิตวิทยา",
+                title: "กฎ 5-4-3-2-1 เมื่อเกิดอาการ Panic",
+                description: "เทคนิค Grounding Technique ที่ช่วยดึงสติกลับมาอยู่กับปัจจุบัน",
+                content: `
+                    <p class="mb-3">เมื่อรู้สึกคุมตัวเองไม่ได้ ให้หยุดและมองรอบๆ แล้วมองหาสิ่งเหล่านี้:</p>
+                    <ul class="space-y-2">
+                        <li>👁️ <b>5 สิ่งที่มองเห็น:</b> เช่น แจกัน, ก้อนเมฆ, รองเท้า</li>
+                        <li>🖐️ <b>4 สิ่งที่สัมผัสได้:</b> เช่น ผิวสัมผัสเสื้อผ้า, เก้าอี้ที่นั่งอยู่</li>
+                        <li>👂 <b>3 สิ่งที่ได้ยิน:</b> เช่น เสียงแอร์, เสียงนก, เสียงรถ</li>
+                        <li>👃 <b>2 สิ่งที่ได้กลิ่น:</b> เช่น กลิ่นกาแฟ, กลิ่นฝน</li>
+                        <li>👅 <b>1 สิ่งที่รับรส:</b> เช่น รสชาติยาสีฟัน หรือรสสัมผัสในปาก</li>
+                    </ul>
+                `,
+                tag: "PanicAttack"
+            }
+        ];
+
+        // --- Components ---
+
+        const CategoryFilter = ({ activeCategory, setActiveCategory }) => {
+            const categories = ["ทั้งหมด", "ผ่อนคลายด่วน", "สุขภาพจิต", "การนอน", "จิตวิทยา"];
+            return (
+                <div className="flex flex-wrap gap-2 mb-8">
+                    {categories.map(cat => (
+                        <button
+                            key={cat}
+                            onClick={() => setActiveCategory(cat)}
+                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                                activeCategory === cat 
+                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' 
+                                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                            }`}
+                        >
+                            {cat}
+                        </button>
+                    ))}
+                </div>
+            );
+        };
+
+        const ArticleCard = ({ article, onClick }) => (
+            <div onClick={() => onClick(article)} className="glass-card p-6 rounded-2xl cursor-pointer flex flex-col h-full group">
+                <div className="flex justify-between items-start mb-4">
+                    <span className="text-[10px] font-bold px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded uppercase tracking-widest border border-indigo-500/20">
+                        {article.category}
+                    </span>
+                    <span className="text-slate-500 text-xs italic">#{article.tag}</span>
+                </div>
+                <h3 className="text-xl font-bold mb-3 leading-tight text-slate-100 group-hover:text-indigo-300 transition-colors">{article.title}</h3>
+                <p className="text-slate-400 text-sm leading-relaxed line-clamp-3 mb-6">{article.description}</p>
+                <div className="mt-auto flex items-center text-indigo-400 text-sm font-semibold">
+                    อ่านวิธีปฏิบัติ <i data-lucide="chevron-right" className="w-4 h-4 ml-1"></i>
+                </div>
+            </div>
+        );
+
+        const Modal = ({ article, isOpen, onClose }) => {
+            if (!isOpen || !article) return null;
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-[fadeIn_0.3s_ease-out]">
+                    <div className="glass-card w-full max-w-2xl rounded-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+                        <div className="sticky top-0 bg-slate-900/80 backdrop-blur-md p-6 flex justify-between items-center border-b border-slate-800 z-10">
+                            <span className="text-indigo-400 font-bold">{article.category}</span>
+                            <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full transition-colors">
+                                <i data-lucide="x" className="w-6 h-6"></i>
+                            </button>
+                        </div>
+                        <div className="p-8">
+                            <h2 className="text-3xl font-bold mb-6 text-white">{article.title}</h2>
+                            <div 
+                                className="text-slate-300 leading-relaxed text-lg prose prose-invert"
+                                dangerouslySetInnerHTML={{ __html: article.content }}
+                            />
+                            <div className="mt-10 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
+                                <p className="text-sm text-indigo-300"><b>หมายเหตุ:</b> บทความนี้เป็นการแนะนำเบื้องต้น หากคุณรู้สึกว่าอาการกระทบต่อชีวิตประจำวันอย่างมาก แนะนำให้ปรึกษาผู้เชี่ยวชาญหรือสายด่วนสุขภาพจิต 1323</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [category, setCategory] = useState("ทั้งหมด");
+            const [selectedArticle, setSelectedArticle] = useState(null);
+            const [isPlaying, setIsPlaying] = useState(true); // ตั้งค่าเริ่มต้นเป็น True เพื่อพยายามเล่นเลย
+            const audioRef = useRef(null);
+
+            // --- ส่วนจัดการเพลง (Autoplay Logic) ---
+            useEffect(() => {
+                const audio = audioRef.current;
+                audio.volume = 0.4; // ความดัง 40%
+
+                // ฟังก์ชั่นพยายามเล่นเพลง
+                const tryToPlay = async () => {
+                    try {
+                        await audio.play();
+                        setIsPlaying(true);
+                    } catch (error) {
+                        console.log("Autoplay blocked by browser policy. Waiting for interaction.");
+                        setIsPlaying(false);
+                        
+                        // ถ้าเล่นไม่ได้ (ติด Policy) ให้รอคลิกแรกของผู้ใช้ แล้วเล่นทันที
+                        const playOnInteraction = () => {
+                            audio.play();
+                            setIsPlaying(true);
+                            // ลบ Listener ออกเพื่อไม่ให้เรียกซ้ำ
+                            ['click', 'touchstart', 'keydown'].forEach(event => 
+                                document.removeEventListener(event, playOnInteraction)
+                            );
+                        };
+
+                        // ดักฟังทุกการกระทำบนหน้าจอ
+                        ['click', 'touchstart', 'keydown'].forEach(event => 
+                            document.addEventListener(event, playOnInteraction)
+                        );
+                    }
+                };
+
+                tryToPlay();
+            }, []);
+
+            const toggleMusic = () => {
+                if (audioRef.current.paused) {
+                    audioRef.current.play();
+                    setIsPlaying(true);
+                } else {
+                    audioRef.current.pause();
+                    setIsPlaying(false);
+                }
+            };
+
+            // อัพเดทไอคอน Lucide
+            useEffect(() => {
+                if (window.lucide) window.lucide.createIcons();
+            }, [category, selectedArticle, isPlaying]);
+
+            const filteredArticles = useMemo(() => {
+                return category === "ทั้งหมด" 
+                    ? ARTICLES 
+                    : ARTICLES.filter(a => a.category === category);
+            }, [category]);
+
+            return (
+                <div className="min-h-screen relative">
+                    {/* Audio Element (ซ่อนไว้) - ใช้เพลง Ambient Loop */}
+                    <audio ref={audioRef} src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3" loop />
+
+                    <nav className="border-b border-slate-800 bg-slate-900/50 sticky top-0 z-30 backdrop-blur-md">
+                        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+                            <div className="flex items-center space-x-2 cursor-pointer" onClick={() => window.location.reload()}>
+                                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+                                    <i data-lucide="heart" className="w-5 h-5 text-white fill-white"></i>
+                                </div>
+                                <span className="text-xl font-bold tracking-tighter hidden sm:inline">MindfulDark</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-4">
+                                {/* ปุ่มเปิด/ปิดเสียง */}
+                                <button 
+                                    onClick={toggleMusic}
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 hover:bg-slate-700 transition-colors text-xs text-slate-300"
+                                >
+                                    {isPlaying ? (
+                                        <div className="sound-wave">
+                                            <div className="bar"></div>
+                                            <div className="bar"></div>
+                                            <div className="bar"></div>
+                                            <div className="bar"></div>
+                                        </div>
+                                    ) : (
+                                        <i data-lucide="volume-x" className="w-4 h-4"></i>
+                                    )}
+                                    <span>{isPlaying ? 'กำลังเล่น' : 'ปิดเสียง'}</span>
+                                </button>
+
+                                {/* [เพิ่มใหม่] ปุ่มกลับหน้าหลัก */}
+                                <a 
+                                    href="index.html" 
+                                    className="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white transition-colors bg-white/5 px-4 py-2 rounded-lg hover:bg-white/10"
+                                >
+                                    <i data-lucide="home" className="w-4 h-4"></i>
+                                    <span className="hidden sm:inline">หน้าหลัก</span>
+                                </a>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <main className="max-w-6xl mx-auto px-6 py-12">
+                        {/* Header Section */}
+                        <header className="mb-12">
+                            <h1 className="text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-white via-slate-200 to-slate-500 bg-clip-text text-transparent">
+                                คลังบทความดูแลใจ
+                            </h1>
+                            <p className="text-slate-400 text-lg max-w-2xl">
+                                รวบรวมเทคนิคทางจิตวิทยาและวิธีดูแลตัวเองแบบ Step-by-step ที่ผ่านการกลั่นกรองให้เข้าใจง่ายและนำไปใช้ได้ทันที
+                            </p>
+                        </header>
+
+                        <CategoryFilter activeCategory={category} setActiveCategory={setCategory} />
+
+                        {/* Articles Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredArticles.map(article => (
+                                <ArticleCard 
+                                    key={article.id} 
+                                    article={article} 
+                                    onClick={setSelectedArticle} 
+                                />
+                            ))}
+                        </div>
+
+                        {/* Emergency Contact */}
+                        <section className="mt-20 p-8 rounded-3xl bg-gradient-to-br from-indigo-900/40 to-slate-900 border border-indigo-500/30">
+                            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                                <div>
+                                    <h3 className="text-2xl font-bold mb-2">ต้องการความช่วยเหลือด่วน?</h3>
+                                    <p className="text-indigo-200/70">สายด่วนสุขภาพจิตพร้อมรับฟังคุณตลอด 24 ชั่วโมง</p>
+                                </div>
+                                <div className="flex gap-4">
+                                    <a href="tel:1323" className="bg-white text-slate-900 px-8 py-3 rounded-full font-bold flex items-center hover:bg-indigo-100 transition-colors shadow-lg shadow-indigo-500/20">
+                                        <i data-lucide="phone" className="w-5 h-5 mr-2"></i> โทร 1323
+                                    </a>
+                                </div>
+                            </div>
+                        </section>
+                    </main>
+
+                    <Modal 
+                        article={selectedArticle} 
+                        isOpen={!!selectedArticle} 
+                        onClose={() => setSelectedArticle(null)} 
+                    />
+
+                    <footer className="border-t border-slate-800 py-12 mt-20 text-center">
+                        <div className="flex justify-center mb-6">
+                             <a href="index.html" className="text-slate-500 hover:text-indigo-400 transition-colors flex items-center gap-2">
+                                <i data-lucide="arrow-left-circle" className="w-4 h-4"></i> กลับสู่หน้าหลัก
+                            </a>
+                        </div>
+                        <p className="text-slate-600 text-sm">ข้อมูลบนเว็บไซต์นี้มีวัตถุประสงค์เพื่อการให้ความรู้เบื้องต้นเท่านั้น ไม่สามารถทดแทนการวินิจฉัยทางการแพทย์ได้</p>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

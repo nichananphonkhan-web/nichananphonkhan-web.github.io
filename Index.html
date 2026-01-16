@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตรวจสอบความเสี่ยงภาวะซึมเศร้า | KinD Project</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        :root { --font-inter: 'Inter', sans-serif; }
+        body { font-family: var(--font-inter); }
+        
+        @keyframes blob {
+          0% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+          100% { transform: translate(0px, 0px) scale(1); }
+        }
+        .animate-blob { animation: blob 10s infinite; }
+        .animation-delay-2000 { animation-delay: 2s; }
+        .animation-delay-4000 { animation-delay: 4s; }
+        .animate-fade-in-down { animation: fadeInDown 1s ease-out forwards; }
+        @keyframes fadeInDown {
+          0% { opacity: 0; transform: translateY(-20px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .three-d-text {
+            font-size: 3rem; 
+            line-height: 1.2;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: #E0F7FA; 
+            text-shadow: 0 0 5px rgba(0, 176, 255, 0.5), 0 2px 0 #00B0FF, 0 4px 0 #0077c2, 0 6px 0 #005f9b; 
+            transition: transform 0.3s ease;
+        }
+        @media (min-width: 768px) { .three-d-text { font-size: 5rem; } }
+        .three-d-text:hover { transform: translateY(-2px); }
+
+        .card-hover-effect {
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .card-hover-effect:hover {
+            border-color: var(--hover-color);
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body class="min-h-screen w-full bg-[#121212] relative overflow-x-hidden text-white">
+
+    <!-- Background Animation -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10">
+        <div class="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-pink-600 rounded-full mix-blend-screen filter blur-[100px] opacity-20 animate-blob"></div>
+        <div class="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-blue-600 rounded-full mix-blend-screen filter blur-[100px] opacity-20 animate-blob animation-delay-2000"></div>
+        <div class="absolute bottom-[-20%] left-[20%] w-[600px] h-[600px] bg-purple-600 rounded-full mix-blend-screen filter blur-[100px] opacity-20 animate-blob animation-delay-4000"></div>
+        <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10"></div>
+    </div>
+
+    <!-- Audio Player -->
+    <audio id="bg-music" loop>
+        <source src="bg.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Music Control Button (Visible immediately) -->
+    <button id="music-control" class="fixed bottom-6 left-6 z-[110] p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all">
+        <span id="music-icon">🔇</span>
+    </button>
+
+    <!-- Main Content -->
+    <main id="app-container" class="container mx-auto px-6 min-h-screen flex flex-col items-center justify-center pt-10 pb-24">
+    </main>
+
+    <!-- Notifications -->
+    <div id="notification-box" class="fixed top-5 right-5 z-[100] p-4 rounded-lg bg-[#1E1E1E] border border-gray-700 text-white shadow-2xl opacity-0 transition-opacity duration-300 pointer-events-none flex items-center gap-3">
+        <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+        <span id="notification-msg">Message</span>
+    </div>
+
+    <footer class="fixed bottom-4 w-full text-center text-gray-600 text-sm font-light z-0 pointer-events-none">
+        © 2024 KinD Project - Health for Everyone
+    </footer>
+
+    <script>
+        const navItems = [
+            { id: 'quiz', title: 'เริ่มทำแบบสอบถาม', description: 'ประเมินความเสี่ยงและระดับภาวะซึมเศร้าเบื้องต้น (2Q, 9Q) เพื่อรู้ทันใจตัวเอง', iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 15h4"/><path d="M8 11h.01"/><path d="M8 15h.01"/></svg>`, color: '#FF4081', bgColor: '#3a0c1a', shadowColor: '#FF4081', href: 'Test.html' },
+            { id: 'food', title: 'แนะนำอาหารอารมณ์ดี', description: 'ค้นพบเมนูอาหารที่ช่วยปรับสมดุลสารเคมีในสมอง เสริมสร้างสุขภาพจิตที่ดี', iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 21v-8"/><path d="M15 2v10a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V2"/><path d="M17 21v-8"/></svg>`, color: '#00E676', bgColor: '#002e17', shadowColor: '#00E676', href: 'food.html' },
+            { id: 'articles', title: 'บทความสุขภาพ', description: 'รวมบทความน่ารู้ เทคนิคการดูแลใจ และวิธีรับมือกับความเครียดในชีวิตประจำวัน', iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`, color: '#00B0FF', bgColor: '#002536', shadowColor: '#00B0FF', href: 'healthy.html' },
+            { id: 'hotline', title: 'สายด่วนสุขภาพ', description: 'เบอร์โทรฉุกเฉินและหน่วยงานที่ให้คำปรึกษาด้านสุขภาพจิตตลอด 24 ชั่วโมง', iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 3.08 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`, color: '#FFD740', bgColor: '#332a00', shadowColor: '#FFD740', href: 'sos.html' },
+            { 
+                id: 'feedback', 
+                title: 'ประเมินความพึงพอใจ', 
+                description: 'ร่วมแสดงความคิดเห็นและให้คะแนนความพึงพอใจเว็บไซต์ เพื่อนำไปพัฒนาให้ดียิ่งขึ้น', 
+                iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-5.82 3.25L7.38 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`, 
+                color: '#FF9100', 
+                bgColor: '#331D00', 
+                shadowColor: '#FF9100', 
+                href: 'https://forms.gle/4VefrhYNxNd6h8qi9' 
+            }
+        ];
+
+        function showNotification(message, color = '#fff') {
+            const box = document.getElementById('notification-box');
+            const msg = document.getElementById('notification-msg');
+            msg.textContent = message;
+            box.style.borderLeft = `4px solid ${color}`;
+            box.style.opacity = '1';
+            box.style.pointerEvents = 'auto';
+            setTimeout(() => { box.style.opacity = '0'; box.style.pointerEvents = 'none'; }, 2500);
+        }
+
+        function handleNavClick(e, id) {
+            const item = navItems.find(n => n.id === id);
+            if(item.href === '' || item.href === '#') {
+                e.preventDefault();
+                showNotification(`คุณเลือกเมนู: ${item.title} (Coming Soon)`, item.color);
+            }
+        }
+
+        function ThreeDText(text) { return `<div class="three-d-text mb-2 text-center leading-tight">${text}</div>`; }
+
+        function MenuCard(item) {
+            const glowStyle = `box-shadow: 0 0 15px ${item.shadowColor}40, 0 0 25px ${item.shadowColor}10; background-color: rgba(30, 30, 30, 0.6); --hover-color: ${item.color};`;
+            const target = item.id === 'feedback' ? '_blank' : '_self';
+            return `
+                <a href="${item.href}" target="${target}" onclick="handleNavClick(event, '${item.id}')" class="group card-hover-effect flex flex-col p-6 rounded-xl backdrop-blur-md cursor-pointer relative overflow-hidden h-full" style="${glowStyle}">
+                    <div class="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                    <div class="p-4 rounded-full w-fit mb-4 transition-transform duration-300 group-hover:scale-110 relative z-10" style="background-color: ${item.bgColor}; box-shadow: 0 0 10px ${item.shadowColor}, inset 0 0 5px ${item.color}; color: ${item.color};">
+                        <div class="w-8 h-8">${item.iconSvg}</div>
+                    </div>
+                    <h2 class="text-xl md:text-2xl font-bold mb-2 transition-colors duration-300 group-hover:text-[${item.color}] relative z-10" style="text-shadow: 0 0 10px rgba(0,0,0,0.5);">${item.title}</h2>
+                    <p class="text-gray-400 text-sm leading-relaxed relative z-10">${item.description}</p>
+                    <div class="absolute bottom-6 right-6 opacity-0 transform translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-gray-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </div>
+                </a>`;
+        }
+
+        function renderApp() {
+            const app = document.getElementById('app-container');
+            const headerHtml = `<div class="mb-12 animate-fade-in-down text-center z-10 w-full px-4">${ThreeDText("ซึมเศร้าเดี๋ยวเล่าให้ฟัง")}<p class="text-blue-100 mt-4 text-base md:text-lg font-light tracking-widest opacity-80 max-w-3xl mx-auto">เว็บไซต์นี้จัดทำและพัตนาขึ้นเพื่อผู้ที่ต้องการตรวจสอบความเสี่ยงเป็นโรคซึมเศร้าและผู้ที่เป็นโรคซึมเศร้า หากวันไหนที่คุณเศร้ายังมีเราอยู่ข้าง ๆ เสมอ</p></div>`;
+            const cardsHtml = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl animate-fade-in-down z-10 place-items-stretch" style="animation-delay: 0.2s; opacity: 0; animation-fill-mode: forwards;">${navItems.map(item => MenuCard(item)).join('')}</div>`;
+            app.innerHTML = headerHtml + cardsHtml;
+        }
+
+        // --- Music & Autoplay Logic ---
+        const audio = document.getElementById('bg-music');
+        const musicControl = document.getElementById('music-control');
+        const musicIcon = document.getElementById('music-icon');
+        
+        audio.volume = 0.5;
+
+        // Toggle Music logic
+        musicControl.addEventListener('click', () => {
+            if (audio.paused) {
+                audio.play();
+                musicIcon.textContent = '🔊';
+            } else {
+                audio.pause();
+                musicIcon.textContent = '🔇';
+            }
+        });
+
+        // Smart Autoplay: Try to play, if blocked, wait for first click
+        function attemptAutoplay() {
+            audio.play().then(() => {
+                musicIcon.textContent = '🔊';
+            }).catch(error => {
+                console.log("Autoplay blocked. Waiting for user interaction.");
+                
+                const playOnInteraction = () => {
+                    audio.play();
+                    musicIcon.textContent = '🔊';
+                    // Remove listeners once played
+                    document.removeEventListener('click', playOnInteraction);
+                    document.removeEventListener('touchstart', playOnInteraction);
+                };
+
+                document.addEventListener('click', playOnInteraction);
+                document.addEventListener('touchstart', playOnInteraction);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderApp();
+            attemptAutoplay();
+        });
+    </script>
+</body>
+</html>
